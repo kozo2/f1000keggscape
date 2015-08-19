@@ -1,0 +1,171 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Welcome to writeLaTeX --- just edit your LaTeX on the left,
+% and we'll compile it for you on the right. If you give 
+% someone the link to this page, they can edit at the same
+% time. See the help menu above for more info. Enjoy!
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% For more detailed article preparation guidelines, please see:
+% http://f1000research.com/author-guidelines
+
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage{f1000_styles}
+
+\begin{document}
+
+\title{KEGGscape: a Cytoscape app for pathway data integration}
+\author[1, 2, *]{Kozo Nishida}
+\author[3, *]{Keiichiro Ono}
+\author[4]{Shigehiko Kanaya}
+\author[1]{Koichi Takahashi}
+\affil[1]{Laboratory for Biochemical Simulation, RIKEN Quantitative Biology Center, 6-2-3 Furuedai, Suita, Osaka, 565-0874, Japan. Email: knishida@riken.jp}
+\affil[2]{JST, National Bioscience Database Center (NBDC), 5-3, Yonbancho, Chiyoda-ku, Tokyo, 102-0081, Japan}
+\affil[3]{Departments of Medicine, University of California San Diego, La Jolla, California, 92093, United States of America. Email: kono@ucsd.edu}
+\affil[4]{Graduate School of Information Science, Nara Institute of Science and Technology, 8916-5 Takayama, Ikoma, Nara 630-0101, Japan}
+\affil[*]{corresponding author}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+
+In this paper, we present KEGGscape a pathway data integration and visualization app for Cytoscape (http://apps.cytoscape.org/apps/keggscape).  KEGG is a comprehensive public biological database that contains large collection of human curated pathways.
+
+% revise
+Cytoscape is a widely used open-source network analysis platform, but Cytoscape does not support KEGG pathway data import by default. As far as we know KEGGscape(formerly named KGMLreader) is the first app which resolved this problem.
+% revise
+
+KEGGscape utilizes the database to reproduce the corresponding hand-drawn pathway diagrams with as much detail as possible in Cytoscape. Further, it allows users to import pathway data sets to visualize biologist-friendly diagrams using the Cytoscape core visualization function (Visual Style) and the ability to perform pathway analysis with a variety of Cytoscape apps.  From the analyzed data, users can create complex and interactive visualizations which cannot be done in the KEGG PATHWAY web application.  Experimental data with Affymetrix E. coli chips are used as an example to demonstrate how users can integrate pathways, annotations, and experimental data sets to create complex visualizations that clarify biological systems using KEGGscape and other Cytoscape apps.
+
+\end{abstract}
+\listoftodos[F1000Research review comments] % Ignore until review stage
+\clearpage
+
+\section*{Introduction}
+
+Kyoto Encyclopedia of Genes and Genomes (KEGG, http://www.genome.jp/kegg) \cite{kanehisa2014data} is a widely used biological database of high-level biological functions. It contains pathway data sets that have comprehensive annotations and high quality human-curated, hand-drawn diagrams.
+
+% Most biological pathway databases store data as machine-readable graph topologies, which leave much of the details about how the diagrams were drawn excluded from the data files.
+% revise
+Some biological pathway databases store data as machine-readable graph formats like SBML\cite{hucka2003systems} in model SEED\cite{henry2010high} and Reactome\cite{croft2014reactome}, BioPAX\cite{demir2010biopax} in BioCyc\cite{caspi2014metacyc}, and GPML in Wikipathways\cite{kelder2012wikipathways}.
+SBML and BioPAX are widely used for pathway data formats, but leave much of the details about how the each diagram component is layouted.
+% revise
+
+This is a problem when third-party developers want to reproduce the pathway diagrams in their applications.  In contrast, the KEGG PATHWAY database stores graphics information in machine-readable KEGG Markup Language (KGML, http://www.kegg.jp/kegg/xml) format. KGML files are currently freely available on the KEGG website, and KGML is the only downloadable text data without a subscription.
+
+This will be news to some readers of this paper, since KEGG has gone through various distribution and licensing models.
+
+
+Thus, in these pathway diagrams, biological entities, such as enzymes or compounds, are manually laid-out and the diagrams are easy to understand for biologists. 
+
+The KEGG PATHWAY database is deployed as a web application using static bitmap images for pathway diagrams, and user-provided date is integrated with KEGG Mapper(http://www.genome.jp/kegg/mapper.html). Furthermore, KEGG Atlas(http://www.genome.jp/kegg/atlas.html) provides a comprehensive network view of global metabolic pathways. Recent improvements to KEGG Atlas, such as Pathway Projector\cite{kono2009pathway} and iPath2\cite{yamada2011ipath2}, have made it possible to perform basic data integration and visualization like mapping the expression values to node graphics. However, despite these features, it is difficult to integrate external data sets and create custom visualization. Furthermore, they are limited to those on existing desktop pathway analysis applications. To ameliorate these problems, several projects for integrating a user's own models onto the KEGG pathways have therefore been developed(CytoSEED Cytoscape app\cite{dejongh2012cytoseed}, KEGGtranslator\cite{wrzodek2011keggtranslator}).\newline
+
+\if0
+KEGG PATHWAY database is deployed as a web application using static bitmap images for pathway diagrams, and it is not easy to integrate external data sets and create custom visualization.  It has limited features to integrate user-provided data (KEGG Mapper \cite{keggmapper}) and for global metabolic pathways, it has more comprehensive network view (KEGG Atlas \cite{keggatlas}). Users can perform basic data integration and visualization with these features like mapping expression values to node colors and there are some KEGG Atlas improvements (Pathway projector \cite{kono2009pathway}, iPath2 \cite{yamada2011ipath2}), but it is limited comparing to existing desktop pathway analysis applications.  To solve these limitations of the KEGG web application, there are several projects for integrating users’ own models on the KEGG pathways( CytoSEED Cytoscape app \cite{dejongh2012cytoseed}, KEGGtranslator \cite{wrzodek2011keggtranslator}).
+\fi
+
+Cytoscape \cite{shannon2003cytoscape} \cite{smoot2011cytoscape} is a de-facto standard software platform for biological network analysis and visualization.  One of its advantages is its large collection of apps for a variety of biological problem domains, such as Gene Ontology term enrichment analysis (BiNGO \cite{maere2005bingo}) and statistical network analysis (CentiScaPe \cite{scardoni2009analyzing}), which are also mostly open source software. Additionally, Cytoscape has a flexible network visualization function and is optimized for large-scale network analysis.  There are several applications dedicated to biological pathway analysis (Vanted \cite{rohn2012vanted}, VisANT \cite{hu2013visant}) that support KGML by default.  Although Cytoscape does not have a built-in function to load biological pathways, if this task is done with a separate app, users can take advantage of its large-scale network analysis features, variety of analysis apps, and data visualization of biologists-friendly human curated pathways.
+\newline
+
+The goal of our new Cytoscape app, KEGGscape, is to bridge the flexibility of fully-featured network analysis platforms with the high-quality pathway diagrams available in the KEGG PATHWAY web application.  KEGGscape, a successor of KGMLReader (http://apps.cytoscape.org/apps/kgmlreader) for Cytoscape 2 series, is an app that imports KEGG pathway diagrams from KGML files and provides a new way to use KEGG pathway diagrams as data integration blueprints in cooperation with Cytoscape core features and an existing variety of apps.  KEGGScape is completely re-designed for the new Cytoscape 3 API and supports signaling pathways in addition to metabolic pathways, including the global metabolic pathways used in KEGG Atlas (Figure \ref{kegg-global}). In this paper, we present a basic design and implementation of KEGGscape and an example workflow utilizing KGML files, and experimental data to create information-rich pathway visualizations for clarifying omics-scale data sets. KGMLReader is the first open-source Cytoscape app that reads the graphics details of KGML files, and KEGGscape was designed to use standard Cytoscape features only. These feature enable users to use KEGG pathways with other data sets easily.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth]{kegg-global.png}
+\caption{\label{kegg-global}A KEGG Global Metabolic Pathway generated with the KEGGscape app.}
+\end{figure}
+
+\begin{figure*}[htb]
+\centering
+\includegraphics[width=17.4cm]{F1000-KEGGScape-workflow.pdf}
+\caption{Basic pathway analysis workflow with KEGGscape.  Cytoscape with KEGGscape can be used as a part of larger workflows to publish integrated pathway visualizations as vector graphics, bitmap images, or JSON for web-based visualization using Cytoscape.js (http://cytoscape.github.io/cytoscape.js/).}
+\label{workflow}
+\end{figure*}
+
+\begin{figure*}[htb]
+\centering
+\includegraphics[width=17.4cm]{F1000-kegg-side.png}
+\caption{Comparison of the original diagram and Cytoscape visualization for the human MAPK signaling pathway (KEGG hsa04010).}
+\label{comparison}
+\end{figure*}
+
+
+\section*{Implementation}
+KEGGscape is a Cytoscape 3 app written in Java programming language and is designed to load pathway data files in KGML format.  KGML is an XML file format designed by the KEGG project and contains the topology of pathways and visual representations of all elements in the diagram. KGML has formal specification as a DTD (Document Type Definition) file, which enables the use of unmarshaller (https://jaxb.java.net) for converting XML elements directly into Java objects. This conversion creates two types of data: pathway topology and its graphical representations.  Pathway topology and its properties are converted into CyNetwork and CyTable objects, which are the standard data model in Cytoscape 3. In KGML, all graphical information, such as the color of enzymes or shape of compounds is stored under <graphics> tag. Instead of setting the graphics details of nodes and edges directly from this information, Cytoscape generates Visual Style, which is a collection of default visual properties and visual mapping function, for each pathway based on the information under this tag. KEGGscape follows a standard CyNetworkReader design guideline, which enables Cytoscape to detect KGML files automatically.
+
+\subsection*{Workflow}
+Figure \ref{workflow} shows an example of a pathway analysis workflow with KEGGscape. To take advantage of the flexible visualization and analysis features in Cytoscape, users need to import as much information as possible for the pathways they want to analyze.  Although Cytoscape is a powerful tool for biological data integration, it is not the best platform for data preparation or cleansing. Users can instead prepare annotations and experimental data sets for the pathway using tools of their choice, such as R (Bioconductor \cite{gentleman2004bioconductor}), Python, or Excel. Once the data files are ready, Cytoscape can read them into an on-memory session and visualize the data on the KEGG pathways.  Imported data sets only use standard Cytoscape data objects, and users can then access all of the standard Cytoscape features to create custom pathway visualizations.  An actual workflow will be presented in a later section.
+
+\subsection*{Limitations}
+Although KEGGscape can read all information of the pathways saved in KGML files, some of the pathway visualizations in Cytoscape look slightly different from the original hand-drawn diagrams available on the KEGG website.  The cause of this issue is missing graphics information in the KGML files.  Figure \ref{comparison} is a side-by-side comparison of the same pathway visualization (human MAPK signaling pathway; KEGG ID: hsa04010). The original diagram (left) contains several background visual annotations that are not visible in the visualization created by Cytoscape (right). The hand-drawn compartmental annotations are not encoded in KGML files, which means they cannot be reproduced by KEGGscape.
+
+\begin{figure*}[htb]
+\centering
+\includegraphics[width=17cm]{F1000-kegg-result.png}
+\caption{KEGG pathway visualization integrated with gene expression data for the glycine, serine and threonine metabolism pathway of Escherichia coli K-12 MG1655 (KEGG eco00260). Green border nodes are KO (KEGG Orthology) annotated nodes. Red colored nodes include differentially expressed genes (p-value < 0.05).}
+\label{result}
+\end{figure*}
+
+\section*{Results}
+As an example workflow, we integrated and visualized a KEGG pathway and gene expression profile using KEGGscape and external tools.  In this example, the differentially expressed genes between two groups, mutants and controls, in a global expression profile are mapped on the KEGG pathway, as too are the t-test results.
+
+\subsection*{Data Preparation}
+To perform this pathway analysis in Cytoscape, we used Bioconductor (http://www.bioconductor.org/) to prepare the gene expression matrix data. We normalized Affymetrix GeneChip data by the robust multi-array average (RMA) method with the Bioconductor packages ecoliLeucine \cite{ecoliLeucine}\cite{hung2002global} and affy \cite{gautier2004affy}.  The leucine regulatory protein (Lrp) is a DNA binding protein and known as a leucine responsive global regulator \cite{hung2002global}. The p-value for each probeset between four lrp mutant strains and four control chips was calculated by rowttest method in genefilter package\cite{genefilter}.  From this calculation, we obtained a list of genes that are differentially expressed (p-value < 0.05). We sent these probeset identifiers to KEGG Mapper and picked the highest hit, which was the glycine, serine and thereonine metabolic pathway (KEGG ID: eco00260) for visualization.
+
+\subsection*{Visualization}
+To create a visualization using all the data sets, we imported the KGML file of eco00260 and the p-value matrix file prepared in the previous data preparation to Cytoscape 3, and merged the matrices with a custom Python script (Figure \ref{result}). Because Cytoscape does not support fuzzy key matching, we used our Python script to append a key column to the p-value matrix to utilize the Cytoscape table merge tool.
+\newline
+
+The node table in Cytoscape for the imported KGML had KEGG gene annotations. The gene IDs for each enzyme node were used as keys for merging the KGML node table and p-value matrix. In this Figure \ref{result}, node colors in the original KEGG pathway were mapped to node border colors and p-values were mapped to node color gradient (red to white) to visualize the significantly expressed genes.
+
+
+\section*{Conclusions}
+In this paper, we presented the design and implementation of KEGGscape and an example analysis workflow integrating global gene expression profiles and KEGG pathways using KEGGscape and two external tools, Bioconductor and Python. The workflow demonstrates how users can integrate omics data in an interactive pathway diagram.
+
+\subsection*{Future Plan}
+Current workflow can map arbitrary omics data onto interactive KEGG pathway diagrams, but it requires some manual editing to create informative visualizations.  To minimize the manual process in the workflow, we plan to implement a collection of utility Python scripts to manipulate networks and Visual Styles via RESTful API, which will be published as a part of the Cytoscape 3.2.0 release.  This set of Python scripts works to merge pathway related table metadata (omics profiles, non-KEGG pathway metadata) from external platforms like R and Cytoscape to automate common tasks in the visualization process.
+
+
+\subsection*{Software availability}
+The app website: http://apps.cytoscape.org/apps/keggscape
+Source code: https://github.com/idekerlab/KEGGscape
+License: Apache License Version 2.0
+
+\subsection*{Author contributions}
+SK guided the GeneChip data preparation and the statistical tests, KT guided the total system design of the project. KN designed and implemented the software under KO's supervision and performed sample analysis and visualization.  KO contributed to the writing of this article.
+
+\subsection*{Competing interests}
+No competing interests were disclosed.
+
+\subsection*{Grant information}
+This work was supported by National Bioscience Database Center (NBDC) of the Japan Science and Technology Agency (JST).
+
+\subsection*{Acknowledgements}
+The authors would like to thank the Google Summer of Code program and Biohackathon attendees for helpful suggestions at the early stage of KEGGscape development, and Peter Karagiannis for reading this article and for useful comments.
+
+\nocite{*}
+{\small\bibliographystyle{unsrt}
+\bibliography{sample}}
+
+
+% See this guide for more information on BibTeX:
+% http://libguides.mit.edu/content.php?pid=55482&sid=406343
+
+% For more author guidance please see:
+% http://f1000research.com/author-guidelines
+
+
+% When all authors are happy with the paper, use the 
+% ‘Submit to F1000Research' button from the Share menu above
+% to submit directly to the open life science journal F1000Research.
+
+% Please note that this template results in a draft pre-submission PDF document.
+% Articles will be professionally typeset when accepted for publication.
+
+% We hope you find the F1000Research writeLaTeX template useful,
+% please let us know if you have any feedback using the help menu above.
+
+
+\end{document}
